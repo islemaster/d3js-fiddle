@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>d3js playground</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <style type="text/css" media="screen">
+    body {
+      color: whitesmoke;
+      background: black;
+    }
+    .column-padding {
+      margin: 0 0 0 3px;
+      background: #272822;
+    }
+    .column.left {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      width: 25%;
+    }
+    .column.middle {
+      position: absolute;
+      top: 0px;
+      left: 25%;
+      right: 30%;
+    }
+    .column.right {
+      position: absolute;
+      top: 0px;
+      right: 0px;
+      width: 30%;
+    }
+    h1 {
+      background: black;
+      font-family: sans-serif;
+      font-size: 12pt;
+      line-height: 14pt;
+      font-variant: small-caps;
+      text-align: center;
+      margin: 0;
+      padding: 0.5em;
+      padding-bottom: 0.2em;
+    }
+    .status-bar, pre {
+      margin: 0;
+      color: whitesmoke;
+      font-family: monospace;
+      font-size: 8pt;
+    }
+    .status-bar {
+      text-align: center;
+      background: black;
+      padding: 0.5em;
+    }
+    pre {
+      padding: 2px 0 1px 50px;
+    }
+    .status-bar .success {
+      font-weight: bold;
+      color: green;
+    }
+    .status-bar .failure {
+      font-weight: bold;
+      color: red;
+    }
+    #ace-data-editor {
+      height: 800px;
+    }
+    #ace-script-editor {
+      height: 800px;
+    }
+  </style>
+  <script src="lib/jquery-2.1.3.min.js"></script>
+  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.8/ace.js" type="text/javascript" charset="utf-8"></script>
+  <script language="javascript" type="text/javascript">
+    var dataEditor, scriptEditor, data, render;
+
+    function rebuildGraph() {
+      var rawData = dataEditor.getValue();
+      var rawScript = scriptEditor.getValue();
+
+      // Put latest raw values in local storage
+      localStorage.setItem('data', rawData);
+      localStorage.setItem('script', rawScript);
+
+      try {
+        data = JSON.parse(dataEditor.getValue());
+        try {
+          eval('render = function (data, target) { ' + scriptEditor.getValue() + ' };');
+          var target = document.createElement('div');
+          render(data, target);
+          target.id = 'output';
+          $('#output').replaceWith(target);
+          $('#data-parse-status').html('<span class="success">Data parsed successfully</span>');
+          $('#script-parse-status').html('<span class="success">Script parsed successfully</span>');
+          $('#output-status').html('Last rendered ' + (new Date()).toLocaleTimeString());
+        } catch (e) {
+          var errorHtml = '<span class="failure">' + e.name + '</span> ' +
+              '(' + e.lineNumber + ', ' + e.columnNumber + ') ' + e.message;
+          $('#script-parse-status').html(errorHtml);
+        }
+      } catch (e) {
+        var errorHtml = '<span class="failure">' + e.name + '</span> ' + e.message;
+        $('#data-parse-status').html(errorHtml);
+      }
+    }
+
+    $(function () {
+      $('#ace-data-editor').keyup(rebuildGraph);
+      $('#ace-script-editor').keyup(rebuildGraph);
+
+      dataEditor = ace.edit('ace-data-editor');
+      dataEditor.setTheme('ace/theme/monokai');
+      dataEditor.getSession().setMode('ace/mode/json');
+
+      scriptEditor = ace.edit('ace-script-editor');
+      scriptEditor.setTheme('ace/theme/monokai');
+      scriptEditor.getSession().setMode('ace/mode/javascript');
+
+      // Try to retrieve previous data and script from local storage
+      var storedData = localStorage.getItem('data');
+      var storedScript = localStorage.getItem('script');
+      if (storedData) {
+        dataEditor.setValue(storedData);
+      }
+
+      if (storedScript) {
+        scriptEditor.setValue(storedScript);
+      }
+
+      rebuildGraph();
+    });
+  </script>
+</head>
+<body>
+  <div class="column left">
+    <div class="column-padding">
+      <h1>Data</h1>
+      <div id="data-parse-status" class="status-bar"></div>
+      <pre>var data =</pre>
+      <div id="ace-data-editor">[
+  {"x": 3,  "y": 2},
+  {"x": 18, "y": 4},
+  {"x": 4,  "y": 6},
+  {"x": 22,  "y": 7},
+  {"x": 9,  "y": 20},
+  {"x": 5,  "y": 11}
+]
+</div>
+      <pre>;</pre>
+    </div>
+  </div>
+  <div class="column middle">
+    <div class="column-padding">
+      <h1>Code</h1>
+      <div id="script-parse-status" class="status-bar"></div>
+      <pre>function render(data, target) {</pre>
+      <div id="ace-script-editor">var root = d3.select(target);
+var svg = root.append('svg');
+var scale = 5;
+
+svg.selectAll('circle')
+  .data(data)
+  .enter()
+  .append('circle')
+  .attr('r', 3)
+  .attr('cx', function (d) { return d.x * scale; })
+  .attr('cy', function (d) { return (30*scale) - (d.y * scale); })
+  .style('fill', 'rgba(255, 0, 0, 1)');
+</div>
+      <pre>}</pre>
+    </div>
+  </div>
+  <div class="column right">
+    <div class="column-padding">
+      <h1>Output</h1>
+      <div id="output-status" class="status-bar">...</div>
+      <div id="output"></div>
+    </div>
+  </div>
+</body>
+</html>
+
