@@ -98,11 +98,18 @@
   <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.8/ace.js" type="text/javascript" charset="utf-8"></script>
   <script language="javascript" type="text/javascript">
-    var dataEditor, scriptEditor, data, render;
+    var dataEditor, scriptEditor, dataSrc, renderSrc, data, render;
 
     function rebuildGraph() {
       var rawData = dataEditor.getValue();
       var rawScript = scriptEditor.getValue();
+
+      if (dataSrc === rawData && scriptSrc == rawScript) {
+        return;
+      }
+
+      dataSrc = rawData;
+      scriptSrc = rawScript;
 
       // Put latest raw values in local storage
       localStorage.setItem('data', rawData);
